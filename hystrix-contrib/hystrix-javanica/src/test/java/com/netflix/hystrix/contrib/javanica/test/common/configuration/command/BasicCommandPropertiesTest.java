@@ -27,6 +27,8 @@ import com.netflix.hystrix.contrib.javanica.test.common.domain.User;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.UUID;
+
 import static com.netflix.hystrix.contrib.javanica.conf.HystrixPropertiesManager.CIRCUIT_BREAKER_ENABLED;
 import static com.netflix.hystrix.contrib.javanica.conf.HystrixPropertiesManager.CIRCUIT_BREAKER_ERROR_THRESHOLD_PERCENTAGE;
 import static com.netflix.hystrix.contrib.javanica.conf.HystrixPropertiesManager.CIRCUIT_BREAKER_FORCE_CLOSED;
@@ -150,6 +152,19 @@ public abstract class BasicCommandPropertiesTest extends BasicHystrixTest {
         assertEquals(true, command.getProperties().requestLogEnabled().get().booleanValue());
     }
 
+    @Test
+    public void testThreadPoolCoreSize(){
+        User user = userService.getUserByName("anyName");
+        assertEquals("anyName", user.getName());
+        HystrixInvokableInfo<?> command = HystrixRequestLog.getCurrentRequest()
+                .getAllExecutedCommands().iterator().next();
+        HystrixThreadPoolProperties properties = getThreadPoolProperties(command);
+
+        assertEquals(444, (int) properties.coreSize().get());
+        assertEquals("UserServiceTP", command.getThreadPoolKey().name());
+
+    }
+
     public static class UserService {
 
         @HystrixCommand(commandKey = "GetUserCommand", groupKey = "UserGroupKey", threadPoolKey = "Test",
@@ -207,6 +222,14 @@ public abstract class BasicCommandPropertiesTest extends BasicHystrixTest {
         )
         public User getUsingAllCommandProperties(String id, String name) {
             return new User(id, name + id); // it should be network call
+        }
+
+        @HystrixCommand(threadPoolKey = "UserServiceTP",
+                threadPoolProperties = {
+                        @HystrixProperty(name = "coreSize", value = "444")
+                })
+        public User getUserByName(String name) {
+            return new User(UUID.randomUUID().toString(), name);
         }
 
     }
