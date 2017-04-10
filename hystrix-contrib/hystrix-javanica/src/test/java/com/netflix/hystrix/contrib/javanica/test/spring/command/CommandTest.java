@@ -16,11 +16,17 @@
 package com.netflix.hystrix.contrib.javanica.test.spring.command;
 
 
+import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
 import com.netflix.hystrix.contrib.javanica.test.common.command.BasicCommandTest;
 import com.netflix.hystrix.contrib.javanica.test.common.domain.User;
+import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.stereotype.Service;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * This test covers "Hystrix command" functionality.
@@ -33,6 +39,7 @@ public abstract class CommandTest extends BasicCommandTest {
     @Autowired private BasicCommandTest.UserService userService;
     @Autowired private BasicCommandTest.AdvancedUserService advancedUserService;
     @Autowired private BasicCommandTest.GenericService<String, Long, User> genericUserService;
+    @Autowired private SpringService springService;
 
     @Override
     protected BasicCommandTest.UserService createUserService() {
@@ -50,6 +57,7 @@ public abstract class CommandTest extends BasicCommandTest {
     }
 
     @Configurable
+    @ComponentScan("com.netflix.hystrix.contrib.javanica.test.spring.command")
     public static class CommandTestConfig {
 
         @Bean
@@ -67,6 +75,24 @@ public abstract class CommandTest extends BasicCommandTest {
             return new GenericUserService();
         }
 
+    }
+
+    @Service
+    public static class SpringService extends UserService {
+        @HystrixCommand(fallbackMethod = "fallback")
+        public String fail() {
+            throw new RuntimeException();
+        }
+
+        public String fallback(Throwable t) {
+            return "fallback";
+        }
+    }
+
+    @Test
+    public void testSpringService(){
+       String response = springService.fail();
+       assertEquals("fallback", response);
     }
 
 }
