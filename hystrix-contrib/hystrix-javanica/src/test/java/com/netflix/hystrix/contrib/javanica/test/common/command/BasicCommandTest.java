@@ -33,16 +33,22 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public abstract class BasicCommandTest extends BasicHystrixTest {
-
+    private IService service;
     private UserService userService;
     private AdvancedUserService advancedUserService;
     private GenericService<String, Long, User> genericUserService;
 
     @Before
     public void setUp() throws Exception {
+        service = createService();
         userService = createUserService();
         advancedUserService = createAdvancedUserServiceService();
         genericUserService = createGenericUserService();
+    }
+
+    @Test
+    public void iServiceTest() {
+        service.foo();
     }
 
     @Test
@@ -121,6 +127,7 @@ public abstract class BasicCommandTest extends BasicHystrixTest {
     }
 
     protected abstract UserService createUserService();
+    protected abstract IService createService();
     protected abstract AdvancedUserService createAdvancedUserServiceService();
     protected abstract GenericService<String, Long, User> createGenericUserService();
 
@@ -149,6 +156,19 @@ public abstract class BasicCommandTest extends BasicHystrixTest {
             return new User(sKey, "name: " + lKey);
         }
 
+    }
+
+    public interface IService {
+        @HystrixCommand // isn't intercepted
+        void foo();
+    }
+
+    public static class Service implements IService {
+        //@HystrixCommand
+        @Override
+        public void foo() {
+
+        }
     }
 
     public static class UserService {

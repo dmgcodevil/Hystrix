@@ -30,6 +30,7 @@ import org.springframework.context.annotation.Bean;
  */
 public abstract class CommandTest extends BasicCommandTest {
 
+    @Autowired private BasicCommandTest.IService service;
     @Autowired private BasicCommandTest.UserService userService;
     @Autowired private BasicCommandTest.AdvancedUserService advancedUserService;
     @Autowired private BasicCommandTest.GenericService<String, Long, User> genericUserService;
@@ -49,8 +50,18 @@ public abstract class CommandTest extends BasicCommandTest {
         return genericUserService;
     }
 
+    @Override
+    protected IService createService() {
+        return service;
+    }
+
     @Configurable
     public static class CommandTestConfig {
+
+        @Bean
+        public IService createService() {
+            return new Service();
+        }
 
         @Bean
         public UserService userService() {
